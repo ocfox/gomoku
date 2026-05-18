@@ -56,8 +56,8 @@ socket.addEventListener("open", () => {
 	socket.send(
 		JSON.stringify({
 			type: "join",
-			role: sessionStorage.getItem(ROLE_KEY),
-			secret: sessionStorage.getItem(SECRET_KEY),
+			role: localStorage.getItem(ROLE_KEY),
+			secret: localStorage.getItem(SECRET_KEY),
 		}),
 	);
 });
@@ -67,8 +67,8 @@ socket.addEventListener("message", (e: MessageEvent) => {
 	if (msg.type !== "state") return;
 
 	if (msg.secret) {
-		sessionStorage.setItem(ROLE_KEY, msg.yourRole);
-		sessionStorage.setItem(SECRET_KEY, msg.secret);
+		localStorage.setItem(ROLE_KEY, msg.yourRole);
+		localStorage.setItem(SECRET_KEY, msg.secret);
 	}
 
 	myRole = msg.yourRole;

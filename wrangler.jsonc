@@ -7,6 +7,12 @@
 		"command": "esbuild src/client.ts --bundle --outdir=public",
 		"watch_dir": "src"
 	},
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
 	"assets": {
 		"directory": "./public",
 		"binding": "ASSETS"

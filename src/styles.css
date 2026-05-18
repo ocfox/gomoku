@@ -50,8 +50,14 @@ body {
 	gap: 12px;
 }
 
-.score-b { color: #1a1a1a; font-weight: 500; }
-.score-w { color: #888;    font-weight: 500; }
+.score-b {
+	color: #1a1a1a;
+	font-weight: 500;
+}
+.score-w {
+	color: #888;
+	font-weight: 500;
+}
 
 .score-b.you,
 .score-w.you {
@@ -106,13 +112,25 @@ body {
 	pointer-events: none;
 }
 
-.cell.top::after    { top: 50%; }
-.cell.bottom::after { bottom: 50%; }
-.cell.left::before  { left: 50%; }
-.cell.right::before { right: 50%; }
+.cell.top::after {
+	top: 50%;
+}
+.cell.bottom::after {
+	bottom: 50%;
+}
+.cell.left::before {
+	left: 50%;
+}
+.cell.right::before {
+	right: 50%;
+}
 
-.cell.can-place { cursor: pointer; }
-.cell.occupied  { cursor: not-allowed; }
+.cell.can-place {
+	cursor: pointer;
+}
+.cell.occupied {
+	cursor: not-allowed;
+}
 
 /* Star points */
 .star {
@@ -143,10 +161,16 @@ body {
 	z-index: 2;
 }
 
-.stone-hint.b { background: radial-gradient(circle at 38% 32%, #666, #111 68%); }
-.stone-hint.w { background: radial-gradient(circle at 38% 32%, #fff, #ccc 68%); }
+.stone-hint.b {
+	background: radial-gradient(circle at 38% 32%, #666, #111 68%);
+}
+.stone-hint.w {
+	background: radial-gradient(circle at 38% 32%, #fff, #ccc 68%);
+}
 
-.cell:hover .stone-hint { opacity: 0.35; }
+.cell:hover .stone-hint {
+	opacity: 0.35;
+}
 
 /* Stones */
 .stone {
@@ -183,8 +207,12 @@ body {
 	pointer-events: none;
 }
 
-.stone.b .last-move { background: rgba(255, 255, 255, 0.5); }
-.stone.w .last-move { background: rgba(0, 0, 0, 0.25); }
+.stone.b .last-move {
+	background: rgba(255, 255, 255, 0.5);
+}
+.stone.w .last-move {
+	background: rgba(0, 0, 0, 0.25);
+}
 
 /* ── Board overlay ── */
 .overlay {
@@ -217,8 +245,12 @@ body {
 	transition: background 0.12s;
 }
 
-.overlay button:hover  { background: rgba(255, 255, 255, 0.96); }
-.overlay button:active { background: rgba(240, 240, 240, 0.96); }
+.overlay button:hover {
+	background: rgba(255, 255, 255, 0.96);
+}
+.overlay button:active {
+	background: rgba(240, 240, 240, 0.96);
+}
 
 #timer {
 	font-size: 0.82rem;

@@ -163,6 +163,8 @@ export class GomokuServer extends Server<Env> {
 		this.state.ready[role] = true;
 
 		if (this.state.ready.black && this.state.ready.white) {
+			[this.state.players.black, this.state.players.white] =
+				[this.state.players.white, this.state.players.black];
 			this.state.board = makeBoard();
 			this.state.turn = 1;
 			this.state.winner = null;

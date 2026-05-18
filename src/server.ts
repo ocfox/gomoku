@@ -81,15 +81,16 @@ export class GomokuServer extends Server<Env> {
 		this.sendTo(conn, "spectator");
 	}
 
-	async onClose() {
-		if ([...this.getConnections()].length === 0) {
+	async onClose(conn: Connection) {
+		const remaining = [...this.getConnections()].filter((c) => c.id !== conn.id);
+		if (remaining.length === 0) {
 			await this.ctx.storage.setAlarm(Date.now() + 5 * 60 * 1000);
 		}
 	}
 
 	async onAlarm() {
-		await this.ctx.storage.deleteAll();
 		this.state = makeState();
+		await this.save();
 	}
 
 	async onMessage(conn: Connection, raw: string) {

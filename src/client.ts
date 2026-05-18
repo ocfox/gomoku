@@ -178,10 +178,11 @@ function buildBoard(s: State): string {
 
 			const star = STARS.has(`${x},${y}`) ? `<span class="star"></span>` : "";
 			const isLast = s.lastMove?.x === x && s.lastMove?.y === y;
+			const hint = v === 0 && myTurn ? `<span class="stone-hint ${myRole === "black" ? "b" : "w"}"></span>` : "";
 			const stone = v
 				? `<span class="stone ${v === 1 ? "b" : "w"}">${isLast ? `<span class="last-move"></span>` : ""}</span>`
 				: "";
-			cells += `<div class="${classes.join(" ")}" data-x="${x}" data-y="${y}">${star}${stone}</div>`;
+			cells += `<div class="${classes.join(" ")}" data-x="${x}" data-y="${y}">${star}${hint}${stone}</div>`;
 		}
 	}
 

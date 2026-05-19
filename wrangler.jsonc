@@ -28,6 +28,11 @@
   "migrations": [
     {
       "tag": "v1",
+      "new_sqlite_classes": ["GomokuServer"]
+    },
+    {
+      "tag": "v2",
+      "deleted_classes": ["GomokuServer"],
       "new_sqlite_classes": ["GomokuRoom"]
     }
   ],

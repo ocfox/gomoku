@@ -1,38 +1,38 @@
 {
-	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "gomoku",
-	"main": "src/server.ts",
-	"compatibility_date": "2026-05-18",
-	"build": {
-		"command": "esbuild src/client.ts --bundle --outdir=public",
-		"watch_dir": "src"
-	},
-	"observability": {
-		"logs": {
-			"enabled": true,
-			"invocation_logs": true
-		}
-	},
-	"assets": {
-		"directory": "./public",
-		"binding": "ASSETS"
-	},
-	"durable_objects": {
-		"bindings": [
-			{
-				"name": "GomokuServer",
-				"class_name": "GomokuServer"
-			}
-		]
-	},
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": ["GomokuServer"]
-		}
-	],
-	"route": {
-		"custom_domain": true,
-		"pattern": "gomoku.s4r.in"
-	}
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "gomoku",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-05-18",
+  "build": {
+    "command": "esbuild src/client.ts --bundle --outdir=public",
+    "watch_dir": "src"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GomokuServer",
+        "class_name": "GomokuServer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GomokuServer"]
+    }
+  ],
+  "route": {
+    "custom_domain": true,
+    "pattern": "gomoku.s4r.in"
+  }
 }

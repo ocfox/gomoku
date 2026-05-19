@@ -68,7 +68,7 @@ function checkWin(board: number[][], x: number, y: number, p: number): boolean {
   return false;
 }
 
-export class GomokuServer extends Server<Env> {
+export class GomokuRoom extends Server<Env> {
   state: ServerState = makeState();
 
   async onStart() {

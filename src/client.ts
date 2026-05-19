@@ -41,7 +41,7 @@ const SECRET_KEY = `secret-${roomId}`;
 const socket = new PartySocket({
   host: location.host,
   room: roomId,
-  party: "gomoku-server",
+  party: "gomoku-room",
 });
 let state: State | null = null;
 let myRole: Role = "spectator";

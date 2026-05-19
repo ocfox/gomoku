@@ -20,20 +20,15 @@
   "durable_objects": {
     "bindings": [
       {
-        "name": "GomokuServer",
-        "class_name": "GomokuServer"
+        "name": "GomokuRoom",
+        "class_name": "GomokuRoom"
       }
     ]
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["GomokuServer"]
-    },
-    {
-      "tag": "v2",
-      "deleted_classes": ["GomokuServer"],
-      "new_sqlite_classes": ["GomokuServer"]
+      "new_sqlite_classes": ["GomokuRoom"]
     }
   ],
   "route": {

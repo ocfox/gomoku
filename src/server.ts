@@ -69,6 +69,8 @@ function checkWin(board: number[][], x: number, y: number, p: number): boolean {
 }
 
 export class GomokuRoom extends Server<Env> {
+  static options = { hibernate: true };
+
   state: ServerState = makeState();
 
   async onStart() {

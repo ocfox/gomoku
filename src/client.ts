@@ -1,5 +1,8 @@
 import "./styles.css";
 import PartySocket from "partysocket";
+import { tiks } from "@rexa-developer/tiks";
+
+tiks.init({ theme: "arcade" });
 
 type Phase = "waiting" | "ready" | "playing" | "ended";
 type Role = "p1" | "p2" | "spectator";
@@ -265,6 +268,7 @@ function bindEvents() {
       const x = Number(cell.dataset.x);
       const y = Number(cell.dataset.y);
       pendingMove = { x, y };
+      tiks.click();
       render();
       socket.send(JSON.stringify({ type: "place", x, y }));
     });

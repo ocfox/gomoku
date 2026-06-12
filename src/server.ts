@@ -13,10 +13,11 @@ interface ServerState {
   phase: Phase;
   turn: 1 | 2;
   winner: 1 | 2 | "draw" | null;
-  ready: { black: boolean; white: boolean };
-  scores: { black: number; white: number };
+  ready: { p1: boolean; p2: boolean };
+  scores: { p1: number; p2: number };
   lastMove: { x: number; y: number } | null;
-  players: { black: PlayerInfo | null; white: PlayerInfo | null };
+  players: { p1: PlayerInfo | null; p2: PlayerInfo | null };
+  blackPlayer: 1 | 2;
 }
 
 interface Env {
@@ -33,10 +34,11 @@ function makeState(): ServerState {
     phase: "waiting",
     turn: 1,
     winner: null,
-    ready: { black: false, white: false },
-    scores: { black: 0, white: 0 },
+    ready: { p1: false, p2: false },
+    scores: { p1: 0, p2: 0 },
     lastMove: null,
-    players: { black: null, white: null },
+    players: { p1: null, p2: null },
+    blackPlayer: 1,
   };
 }
 
@@ -111,48 +113,43 @@ export class GomokuRoom extends Server<Env> {
       return;
     }
 
-    if (msg.type === "join") await this.handleJoin(conn, msg.role, msg.secret);
+    if (msg.type === "join") await this.handleJoin(conn, msg.secret);
     else if (msg.type === "ready") await this.handleReady(conn.id);
     else if (msg.type === "place")
       await this.handlePlace(conn.id, msg.x!, msg.y!);
   }
 
-  async handleJoin(conn: Connection, role?: string, secret?: string) {
+  async handleJoin(conn: Connection, secret?: string) {
     const { players } = this.state;
 
-    if (
-      role === "black" &&
-      players.black !== null &&
-      players.black.secret === secret
-    ) {
-      players.black.connId = conn.id;
-      this.sendTo(conn, "black");
-      return;
-    }
-    if (
-      role === "white" &&
-      players.white !== null &&
-      players.white.secret === secret
-    ) {
-      players.white.connId = conn.id;
-      this.sendTo(conn, "white");
-      return;
+    // Match by secret — the stable identity across reconnects and color swaps
+    if (secret) {
+      if (players.p1?.secret === secret) {
+        players.p1.connId = conn.id;
+        this.sendTo(conn, "p1");
+        return;
+      }
+      if (players.p2?.secret === secret) {
+        players.p2.connId = conn.id;
+        this.sendTo(conn, "p2");
+        return;
+      }
     }
 
     const newSecret = crypto.randomUUID().slice(0, 8);
 
-    if (!players.black) {
-      players.black = { connId: conn.id, secret: newSecret };
+    if (!players.p1) {
+      players.p1 = { connId: conn.id, secret: newSecret };
       await this.save();
-      this.sendToWithSecret(conn, "black", newSecret);
+      this.sendToWithSecret(conn, "p1", newSecret);
       return;
     }
 
-    if (!players.white) {
-      players.white = { connId: conn.id, secret: newSecret };
+    if (!players.p2) {
+      players.p2 = { connId: conn.id, secret: newSecret };
       if (this.state.phase === "waiting") this.state.phase = "ready";
       await this.save();
-      this.sendToWithSecret(conn, "white", newSecret);
+      this.sendToWithSecret(conn, "p2", newSecret);
       this.broadcastExcept(conn.id);
       return;
     }
@@ -167,19 +164,14 @@ export class GomokuRoom extends Server<Env> {
 
     this.state.ready[role] = true;
 
-    if (this.state.ready.black && this.state.ready.white) {
-      [this.state.players.black, this.state.players.white] = [
-        this.state.players.white,
-        this.state.players.black,
-      ];
-      [this.state.scores.black, this.state.scores.white] = [
-        this.state.scores.white,
-        this.state.scores.black,
-      ];
+    if (this.state.ready.p1 && this.state.ready.p2) {
+      // Alternate who plays black each round
+      this.state.blackPlayer = this.state.blackPlayer === 1 ? 2 : 1;
       this.state.board = makeBoard();
-      this.state.turn = 1;
+      // Black always moves first; turn = the player number who is black this round
+      this.state.turn = this.state.blackPlayer;
       this.state.winner = null;
-      this.state.ready = { black: false, white: false };
+      this.state.ready = { p1: false, p2: false };
       this.state.lastMove = null;
       this.state.phase = "playing";
     }
@@ -189,28 +181,30 @@ export class GomokuRoom extends Server<Env> {
   }
 
   async handlePlace(connId: string, x: number, y: number) {
-    const { board, phase, turn } = this.state;
+    const { board, phase, turn, blackPlayer } = this.state;
     if (phase !== "playing") return;
 
     const role = this.getRole(connId);
     if (role === "spectator") return;
-    const playerNum = role === "black" ? 1 : 2;
+    const playerNum = role === "p1" ? 1 : 2;
     if (playerNum !== turn) return;
     if (x < 0 || x >= 15 || y < 0 || y >= 15) return;
     if (board[y][x] !== 0) return;
 
-    board[y][x] = playerNum;
+    // Board uses 1=black stone, 2=white stone
+    const stoneValue = playerNum === blackPlayer ? 1 : 2;
+    board[y][x] = stoneValue;
     this.state.lastMove = { x, y };
 
-    if (checkWin(board, x, y, playerNum)) {
+    if (checkWin(board, x, y, stoneValue)) {
       this.state.phase = "ended";
       this.state.winner = playerNum as 1 | 2;
       this.state.scores[role]++;
-      this.state.ready = { black: false, white: false };
+      this.state.ready = { p1: false, p2: false };
     } else if (board.every((row) => row.every((v) => v !== 0))) {
       this.state.phase = "ended";
       this.state.winner = "draw";
-      this.state.ready = { black: false, white: false };
+      this.state.ready = { p1: false, p2: false };
     } else {
       this.state.turn = turn === 1 ? 2 : 1;
     }
@@ -219,9 +213,9 @@ export class GomokuRoom extends Server<Env> {
     this.broadcastAll();
   }
 
-  getRole(connId: string): "black" | "white" | "spectator" {
-    if (this.state.players.black?.connId === connId) return "black";
-    if (this.state.players.white?.connId === connId) return "white";
+  getRole(connId: string): "p1" | "p2" | "spectator" {
+    if (this.state.players.p1?.connId === connId) return "p1";
+    if (this.state.players.p2?.connId === connId) return "p2";
     return "spectator";
   }
 

@@ -2,17 +2,18 @@ import "./styles.css";
 import PartySocket from "partysocket";
 
 type Phase = "waiting" | "ready" | "playing" | "ended";
-type Role = "black" | "white" | "spectator";
+type Role = "p1" | "p2" | "spectator";
 
 interface State {
   board: number[][];
   phase: Phase;
   turn: 1 | 2;
   winner: 1 | 2 | "draw" | null;
-  ready: { black: boolean; white: boolean };
-  scores: { black: number; white: number };
+  ready: { p1: boolean; p2: boolean };
+  scores: { p1: number; p2: number };
   lastMove: { x: number; y: number } | null;
   yourRole: Role;
+  blackPlayer: 1 | 2;
   secret?: string;
 }
 
@@ -35,7 +36,6 @@ if (!roomId) {
   history.replaceState(null, "", "?" + params.toString());
 }
 
-const ROLE_KEY = `role-${roomId}`;
 const SECRET_KEY = `secret-${roomId}`;
 
 const socket = new PartySocket({
@@ -56,7 +56,6 @@ socket.addEventListener("open", () => {
   socket.send(
     JSON.stringify({
       type: "join",
-      role: localStorage.getItem(ROLE_KEY),
       secret: localStorage.getItem(SECRET_KEY),
     }),
   );
@@ -67,7 +66,6 @@ socket.addEventListener("message", (e: MessageEvent) => {
   if (msg.type !== "state") return;
 
   if (msg.secret) {
-    localStorage.setItem(ROLE_KEY, msg.yourRole);
     localStorage.setItem(SECRET_KEY, msg.secret);
   }
 
@@ -103,6 +101,17 @@ function elapsed(): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
+// Returns which stone color the local player is using this round
+function myColor(s: State): "black" | "white" | null {
+  if (myRole === "spectator") return null;
+  return (myRole === "p1") === (s.blackPlayer === 1) ? "black" : "white";
+}
+
+function isMyTurn(s: State): boolean {
+  if (myRole === "spectator" || s.phase !== "playing") return false;
+  return (myRole === "p1" && s.turn === 1) || (myRole === "p2" && s.turn === 2);
+}
+
 function render() {
   if (!state) return;
   document.getElementById("app")!.innerHTML = buildHTML(state);
@@ -112,6 +121,14 @@ function render() {
 function buildHTML(s: State): string {
   const timer =
     s.phase === "playing" ? `<span id="timer">${elapsed()}</span>` : "";
+
+  // Display scores as ●/○ based on who is black this round
+  const p1IsBlack = s.blackPlayer === 1;
+  const blackScore = p1IsBlack ? s.scores.p1 : s.scores.p2;
+  const whiteScore = p1IsBlack ? s.scores.p2 : s.scores.p1;
+  const iAmBlack = myColor(s) === "black";
+  const iAmWhite = myColor(s) === "white";
+
   return `
     <div class="game">
       <div class="board-meta">
@@ -119,8 +136,8 @@ function buildHTML(s: State): string {
         <span class="right-meta">
           ${timer}
           <span class="scores">
-            <span class="score-b ${myRole === "black" ? "you" : ""}">● ${s.scores.black}</span>
-            <span class="score-w ${myRole === "white" ? "you" : ""}">○ ${s.scores.white}</span>
+            <span class="score-b ${iAmBlack ? "you" : ""}">● ${blackScore}</span>
+            <span class="score-w ${iAmWhite ? "you" : ""}">○ ${whiteScore}</span>
           </span>
         </span>
       </div>
@@ -136,34 +153,37 @@ function statusText(s: State): string {
   if (s.phase === "waiting") return "Waiting for opponent…";
   if (s.phase === "ready") {
     if (myRole === "spectator") return "Waiting for players";
-    const iReady = s.ready[myRole as "black" | "white"];
+    const iReady = s.ready[myRole as "p1" | "p2"];
     return iReady ? "Waiting for opponent…" : "";
   }
   if (s.phase === "playing") {
-    if (myRole === "spectator")
-      return s.turn === 1 ? "Black's turn" : "White's turn";
-    const myTurn =
-      (s.turn === 1 && myRole === "black") ||
-      (s.turn === 2 && myRole === "white");
-    return myTurn ? "Your turn" : "Waiting for opponent…";
+    if (myRole === "spectator") {
+      const turnIsBlack =
+        (s.turn === 1 && s.blackPlayer === 1) ||
+        (s.turn === 2 && s.blackPlayer === 2);
+      return turnIsBlack ? "Black's turn" : "White's turn";
+    }
+    return isMyTurn(s) ? "Your turn" : "Waiting for opponent…";
   }
   if (s.phase === "ended") {
     if (s.winner === "draw") return "Draw";
-    if (myRole === "spectator")
-      return `${s.winner === 1 ? "Black" : "White"} wins!`;
+    if (myRole === "spectator") {
+      const winnerIsBlack =
+        (s.winner === 1 && s.blackPlayer === 1) ||
+        (s.winner === 2 && s.blackPlayer === 2);
+      return `${winnerIsBlack ? "Black" : "White"} wins!`;
+    }
     const iWon =
-      (s.winner === 1 && myRole === "black") ||
-      (s.winner === 2 && myRole === "white");
+      (s.winner === 1 && myRole === "p1") ||
+      (s.winner === 2 && myRole === "p2");
     return iWon ? "You win!" : "You lose";
   }
   return "";
 }
 
 function buildBoard(s: State): string {
-  const myTurn =
-    s.phase === "playing" &&
-    ((s.turn === 1 && myRole === "black") ||
-      (s.turn === 2 && myRole === "white"));
+  const myTurn = isMyTurn(s);
+  const color = myColor(s);
 
   let cells = "";
   for (let y = 0; y < 15; y++) {
@@ -179,8 +199,8 @@ function buildBoard(s: State): string {
       const star = STARS.has(`${x},${y}`) ? `<span class="star"></span>` : "";
       const isLast = s.lastMove?.x === x && s.lastMove?.y === y;
       const hint =
-        v === 0 && myTurn
-          ? `<span class="stone-hint ${myRole === "black" ? "b" : "w"}"></span>`
+        v === 0 && myTurn && color
+          ? `<span class="stone-hint ${color === "black" ? "b" : "w"}"></span>`
           : "";
       const stone = v
         ? `<span class="stone ${v === 1 ? "b" : "w"}">${isLast ? `<span class="last-move"></span>` : ""}</span>`
@@ -200,7 +220,7 @@ function buildOverlay(s: State): string {
   }
 
   if (s.phase === "ready") {
-    const iReady = s.ready[myRole as "black" | "white"];
+    const iReady = s.ready[myRole as "p1" | "p2"];
     if (!iReady) {
       return `<div class="overlay"><button id="btn-ready">READY</button></div>`;
     }

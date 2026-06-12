@@ -46,6 +46,7 @@ const socket = new PartySocket({
 let state: State | null = null;
 let myRole: Role = "spectator";
 let waitingRematch = false;
+let pendingMove: { x: number; y: number } | null = null;
 
 let prevTurn: number | null = null;
 let prevPhase: Phase | null = null;
@@ -87,6 +88,7 @@ socket.addEventListener("message", (e: MessageEvent) => {
   }
 
   prevPhase = msg.phase;
+  pendingMove = null;
   state = msg;
   render();
 });
@@ -109,6 +111,7 @@ function myColor(s: State): "black" | "white" | null {
 
 function isMyTurn(s: State): boolean {
   if (myRole === "spectator" || s.phase !== "playing") return false;
+  if (pendingMove !== null) return false;
   return (myRole === "p1" && s.turn === 1) || (myRole === "p2" && s.turn === 2);
 }
 
@@ -196,14 +199,17 @@ function buildBoard(s: State): string {
       if (x === 14) classes.push("right");
       if (myTurn) classes.push(v === 0 ? "can-place" : "occupied");
 
+      const isPending = pendingMove?.x === x && pendingMove?.y === y;
+      const displayValue = isPending && color ? (color === "black" ? 1 : 2) : v;
+
       const star = STARS.has(`${x},${y}`) ? `<span class="star"></span>` : "";
       const isLast = s.lastMove?.x === x && s.lastMove?.y === y;
       const hint =
-        v === 0 && myTurn && color
+        displayValue === 0 && myTurn && color
           ? `<span class="stone-hint ${color === "black" ? "b" : "w"}"></span>`
           : "";
-      const stone = v
-        ? `<span class="stone ${v === 1 ? "b" : "w"}">${isLast ? `<span class="last-move"></span>` : ""}</span>`
+      const stone = displayValue
+        ? `<span class="stone ${displayValue === 1 ? "b" : "w"} ${isPending ? "pending" : ""}">${isLast ? `<span class="last-move"></span>` : ""}</span>`
         : "";
       cells += `<div class="${classes.join(" ")}" data-x="${x}" data-y="${y}">${star}${hint}${stone}</div>`;
     }
@@ -256,13 +262,11 @@ function bindEvents() {
 
   document.querySelectorAll<HTMLElement>(".cell.can-place").forEach((cell) => {
     cell.addEventListener("click", () => {
-      socket.send(
-        JSON.stringify({
-          type: "place",
-          x: Number(cell.dataset.x),
-          y: Number(cell.dataset.y),
-        }),
-      );
+      const x = Number(cell.dataset.x);
+      const y = Number(cell.dataset.y);
+      pendingMove = { x, y };
+      render();
+      socket.send(JSON.stringify({ type: "place", x, y }));
     });
   });
 }

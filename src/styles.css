@@ -214,6 +214,10 @@ body {
   background: rgba(0, 0, 0, 0.25);
 }
 
+.stone.pending {
+  opacity: 0.65;
+}
+
 /* ── Board overlay ── */
 .overlay {
   position: absolute;

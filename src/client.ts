@@ -2,7 +2,7 @@ import "./styles.css";
 import PartySocket from "partysocket";
 import { tiks } from "@rexa-developer/tiks";
 
-tiks.init({ theme: "arcade" });
+tiks.init({ theme: "arcade", volume: 2 });
 
 type Phase = "waiting" | "ready" | "playing" | "ended";
 type Role = "p1" | "p2" | "spectator";

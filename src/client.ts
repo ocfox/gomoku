@@ -353,11 +353,6 @@ function renderBoardCells(s: State) {
   const myTurn = isMyTurn(s);
   const color = myColor(s);
 
-  // Set of winning coordinates for O(1) lookup
-  const winSet = new Set(
-    s.winningLine ? s.winningLine.map(([x, y]) => `${x},${y}`) : [],
-  );
-
   for (let y = 0; y < 15; y++) {
     for (let x = 0; x < 15; x++) {
       const cell = cellElements[y]?.[x];
@@ -388,18 +383,16 @@ function renderBoardCells(s: State) {
       if (displayValue !== 0) {
         const stoneColorClass = displayValue === 1 ? "b" : "w";
         const isLast = s.lastMove?.x === x && s.lastMove?.y === y;
-        const isWin = winSet.has(`${x},${y}`);
 
         if (!stoneEl) {
           stoneEl = document.createElement("span");
-          stoneEl.className = `stone ${stoneColorClass} stone-appear`;
+          stoneEl.className = `stone ${stoneColorClass}`;
           cell.appendChild(stoneEl);
         } else {
           stoneEl.className = `stone ${stoneColorClass}`;
         }
 
         if (isPending) stoneEl.classList.add("pending");
-        if (isWin) stoneEl.classList.add("win-stone");
 
         let lastMoveEl = stoneEl.querySelector<HTMLElement>(".last-move");
         if (isLast) {
